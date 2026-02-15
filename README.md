@@ -1,141 +1,379 @@
-# 🚀 Welcome to Z.ai Code Scaffold
+# SSH Manager
 
-A modern, production-ready web application scaffold powered by cutting-edge technologies, designed to accelerate your development with [Z.ai](https://chat.z.ai)'s AI-powered coding assistance.
+**Массовое управление серверами через SSH**
 
-## ✨ Technology Stack
+Современный веб-интерфейс для асинхронного выполнения команд на множестве серверов. Построен на Next.js 15 с использованием React, TypeScript и Tailwind CSS.
 
-This scaffold provides a robust foundation built with:
-
-### 🎯 Core Framework
-- **⚡ Next.js 16** - The React framework for production with App Router
-- **📘 TypeScript 5** - Type-safe JavaScript for better developer experience
-- **🎨 Tailwind CSS 4** - Utility-first CSS framework for rapid UI development
-
-### 🧩 UI Components & Styling
-- **🧩 shadcn/ui** - High-quality, accessible components built on Radix UI
-- **🎯 Lucide React** - Beautiful & consistent icon library
-- **🌈 Framer Motion** - Production-ready motion library for React
-- **🎨 Next Themes** - Perfect dark mode in 2 lines of code
-
-### 📋 Forms & Validation
-- **🎣 React Hook Form** - Performant forms with easy validation
-- **✅ Zod** - TypeScript-first schema validation
-
-### 🔄 State Management & Data Fetching
-- **🐻 Zustand** - Simple, scalable state management
-- **🔄 TanStack Query** - Powerful data synchronization for React
-- **🌐 Fetch** - Promise-based HTTP request
-
-### 🗄️ Database & Backend
-- **🗄️ Prisma** - Next-generation TypeScript ORM
-- **🔐 NextAuth.js** - Complete open-source authentication solution
-
-### 🎨 Advanced UI Features
-- **📊 TanStack Table** - Headless UI for building tables and datagrids
-- **🖱️ DND Kit** - Modern drag and drop toolkit for React
-- **📊 Recharts** - Redefined chart library built with React and D3
-- **🖼️ Sharp** - High performance image processing
-
-### 🌍 Internationalization & Utilities
-- **🌍 Next Intl** - Internationalization library for Next.js
-- **📅 Date-fns** - Modern JavaScript date utility library
-- **🪝 ReactUse** - Collection of essential React hooks for modern development
-
-## 🎯 Why This Scaffold?
-
-- **🏎️ Fast Development** - Pre-configured tooling and best practices
-- **🎨 Beautiful UI** - Complete shadcn/ui component library with advanced interactions
-- **🔒 Type Safety** - Full TypeScript configuration with Zod validation
-- **📱 Responsive** - Mobile-first design principles with smooth animations
-- **🗄️ Database Ready** - Prisma ORM configured for rapid backend development
-- **🔐 Auth Included** - NextAuth.js for secure authentication flows
-- **📊 Data Visualization** - Charts, tables, and drag-and-drop functionality
-- **🌍 i18n Ready** - Multi-language support with Next Intl
-- **🚀 Production Ready** - Optimized build and deployment settings
-- **🤖 AI-Friendly** - Structured codebase perfect for AI assistance
-
-## 🚀 Quick Start
-
-```bash
-# Install dependencies
-bun install
-
-# Start development server
-bun run dev
-
-# Build for production
-bun run build
-
-# Start production server
-bun start
-```
-
-Open [http://localhost:3000](http://localhost:3000) to see your application running.
-
-## 🤖 Powered by Z.ai
-
-This scaffold is optimized for use with [Z.ai](https://chat.z.ai) - your AI assistant for:
-
-- **💻 Code Generation** - Generate components, pages, and features instantly
-- **🎨 UI Development** - Create beautiful interfaces with AI assistance  
-- **🔧 Bug Fixing** - Identify and resolve issues with intelligent suggestions
-- **📝 Documentation** - Auto-generate comprehensive documentation
-- **🚀 Optimization** - Performance improvements and best practices
-
-Ready to build something amazing? Start chatting with Z.ai at [chat.z.ai](https://chat.z.ai) and experience the future of AI-powered development!
-
-## 📁 Project Structure
-
-```
-src/
-├── app/                 # Next.js App Router pages
-├── components/          # Reusable React components
-│   └── ui/             # shadcn/ui components
-├── hooks/              # Custom React hooks
-└── lib/                # Utility functions and configurations
-```
-
-## 🎨 Available Features & Components
-
-This scaffold includes a comprehensive set of modern web development tools:
-
-### 🧩 UI Components (shadcn/ui)
-- **Layout**: Card, Separator, Aspect Ratio, Resizable Panels
-- **Forms**: Input, Textarea, Select, Checkbox, Radio Group, Switch
-- **Feedback**: Alert, Toast (Sonner), Progress, Skeleton
-- **Navigation**: Breadcrumb, Menubar, Navigation Menu, Pagination
-- **Overlay**: Dialog, Sheet, Popover, Tooltip, Hover Card
-- **Data Display**: Badge, Avatar, Calendar
-
-### 📊 Advanced Data Features
-- **Tables**: Powerful data tables with sorting, filtering, pagination (TanStack Table)
-- **Charts**: Beautiful visualizations with Recharts
-- **Forms**: Type-safe forms with React Hook Form + Zod validation
-
-### 🎨 Interactive Features
-- **Animations**: Smooth micro-interactions with Framer Motion
-- **Drag & Drop**: Modern drag-and-drop functionality with DND Kit
-- **Theme Switching**: Built-in dark/light mode support
-
-### 🔐 Backend Integration
-- **Authentication**: Ready-to-use auth flows with NextAuth.js
-- **Database**: Type-safe database operations with Prisma
-- **API Client**: HTTP requests with Fetch + TanStack Query
-- **State Management**: Simple and scalable with Zustand
-
-### 🌍 Production Features
-- **Internationalization**: Multi-language support with Next Intl
-- **Image Optimization**: Automatic image processing with Sharp
-- **Type Safety**: End-to-end TypeScript with Zod validation
-- **Essential Hooks**: 100+ useful React hooks with ReactUse for common patterns
-
-## 🤝 Get Started with Z.ai
-
-1. **Clone this scaffold** to jumpstart your project
-2. **Visit [chat.z.ai](https://chat.z.ai)** to access your AI coding assistant
-3. **Start building** with intelligent code generation and assistance
-4. **Deploy with confidence** using the production-ready setup
+![SSH Manager](https://img.shields.io/badge/Next.js-15-black?style=flat-square&logo=next.js)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue?style=flat-square&logo=typescript)
+![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)
 
 ---
 
-Built with ❤️ for the developer community. Supercharged by [Z.ai](https://chat.z.ai) 🚀
+## 📋 Содержание
+
+- [Возможности](#-возможности)
+- [Требования](#-требования)
+- [Установка](#-установка)
+- [Использование](#-использование)
+- [Форматы файлов хостов](#-форматы-файлов-хостов)
+- [Настройки](#-настройки)
+- [API](#-api)
+- [Безопасность](#-безопасность)
+- [Скриншоты](#-скриншоты)
+
+---
+
+## ✨ Возможности
+
+### Основные функции
+
+| Функция | Описание |
+|---------|----------|
+| 🔌 **SSH подключения** | Асинхронное подключение к множеству серверов (до 50 параллельно) |
+| ⌨️ **Массовое выполнение** | Выполнение команд на всех выбранных хостах одновременно |
+| 🔐 **Аутентификация** | Поддержка паролей и SSH-ключей (OpenSSH, PuTTY PPK) |
+| 📁 **Импорт хостов** | Загрузка файлов TXT, CSV, XLSX, XLS с валидацией IP |
+| 📊 **Real-time статусы** | Прогресс-бары и индикаторы статуса в реальном времени |
+| 🔄 **Режим добивания** | Автоматические повторные попытки для недоступных хостов |
+| 💾 **Экспорт результатов** | Выгрузка в CSV, JSON, TXT, XLSX |
+| 📜 **История команд** | Сохранение истории выполненных команд |
+| ⚡ **Пресеты** | Быстрый доступ к часто используемым командам |
+
+### Интерфейс
+
+- 🇷🇺 Полностью русскоязычный интерфейс
+- 🎨 Современный дизайн на shadcn/ui
+- 📱 Адаптивный интерфейс с изменяемыми панелями
+- 🌙 Поддержка тёмной/светлой темы
+- 🔍 Фильтрация и поиск по хостам
+
+---
+
+## 💻 Требования
+
+- **Node.js** 18+ или **Bun**
+- **npm**, **yarn**, **pnpm** или **bun**
+
+### Поддерживаемые ОС
+
+- ✅ Windows 10/11
+- ✅ Linux (Ubuntu, Debian, CentOS, Fedora и др.)
+- ✅ macOS
+
+---
+
+## 🚀 Установка
+
+### Клонирование
+
+```bash
+git clone https://github.com/redbleach5/ssh-manager.git
+cd ssh-manager
+```
+
+### Установка зависимостей
+
+С использованием **bun** (рекомендуется):
+```bash
+bun install
+```
+
+С использованием **npm**:
+```bash
+npm install
+```
+
+### Запуск
+
+```bash
+# Bun
+bun run dev
+
+# npm
+npm run dev
+```
+
+Приложение будет доступно по адресу: **http://localhost:3000**
+
+---
+
+## 📖 Использование
+
+### 1. Добавление хостов
+
+#### Вручную
+1. Нажмите кнопку **"Добавить хост"**
+2. Заполните данные:
+   - IP адрес (обязательно)
+   - Порт (по умолчанию 22)
+   - Имя пользователя (по умолчанию root)
+   - Тип аутентификации (пароль или SSH ключ)
+3. Нажмите **"Добавить"**
+
+#### Из файла
+1. Перейдите на вкладку **"Загрузка"**
+2. Перетащите файл или нажмите для выбора
+3. Поддерживаемые форматы: `.txt`, `.csv`, `.xlsx`, `.xls`
+4. Проверьте превью и подтвердите добавление
+
+### 2. Выбор хостов
+
+- Кликните на чекбокс напротив хоста для выбора
+- Используйте чекбокс в заголовке таблицы для выбора всех
+- Фильтруйте по статусу или используйте поиск
+
+### 3. Выполнение команд
+
+1. Перейдите на вкладку **"Выполнение"**
+2. Введите команду или выберите пресет
+3. Настройте параметры (опционально)
+4. Нажмите **"Выполнить"**
+5. Наблюдайте за прогрессом в реальном времени
+
+### 4. Просмотр результатов
+
+1. Перейдите на вкладку **"Результаты"**
+2. Фильтруйте по статусу (успех/ошибка)
+3. Кликните на результат для детального просмотра
+4. Экспортируйте при необходимости
+
+---
+
+## 📁 Форматы файлов хостов
+
+### TXT
+
+```
+# Комментарии начинаются с #
+192.168.1.1
+192.168.1.2 admin password123
+192.168.1.3:2222 root secretpass
+192.168.1.4, 192.168.1.5, 192.168.1.6
+```
+
+### CSV
+
+```csv
+ip,port,username,password,name
+192.168.1.1,22,admin,password1,Web Server
+192.168.1.2,22,root,password2,DB Server
+```
+
+### XLSX/XLS
+
+Таблица с колонками:
+| IP | Port | Username | Password | Name |
+|----|------|----------|----------|------|
+| 192.168.1.1 | 22 | admin | password | Server 1 |
+
+**Поддерживаемые заголовки:**
+- IP: `ip`, `host`, `адрес`
+- Порт: `port`, `порт`
+- Пользователь: `user`, `username`, `login`, `пользователь`
+- Пароль: `pass`, `password`, `пароль`
+- Название: `name`, `hostname`, `имя`
+
+---
+
+## ⚙️ Настройки
+
+### Параметры выполнения
+
+| Параметр | По умолчанию | Описание |
+|----------|--------------|----------|
+| Таймаут подключения | 30000 мс | Время ожидания подключения |
+| Таймаут команды | 60000 мс | Время ожидания выполнения команды |
+| Максимум параллельных | 30 | Количество одновременных подключений |
+
+### Режим добивания
+
+| Параметр | По умолчанию | Описание |
+|----------|--------------|----------|
+| Включить повторы | Да | Автоматические повторные попытки |
+| Количество попыток | 3 | Максимальное число повторов |
+| Задержка | 5000 мс | Пауза между попытками |
+| Бесконечные повторы | Нет | Продолжать до успеха |
+
+### Настройки приложения
+
+| Параметр | Описание |
+|----------|----------|
+| Сохранять хосты | Сохранять список между сессиями |
+| Шифровать ключи | Хранить SSH ключи в зашифрованном виде |
+| История команд | Максимум записей в истории |
+
+---
+
+## 🔌 API
+
+### POST /api/stream
+
+Выполнение команды с Server-Sent Events.
+
+**Запрос:**
+```json
+{
+  "hosts": [
+    {
+      "id": "uuid",
+      "ip": "192.168.1.1",
+      "port": 22,
+      "username": "root",
+      "authType": "password",
+      "password": "encrypted"
+    }
+  ],
+  "command": "uptime",
+  "settings": {
+    "connectionTimeout": 30000,
+    "commandTimeout": 60000,
+    "maxConcurrent": 30,
+    "retryEnabled": true,
+    "retryAttempts": 3,
+    "retryDelay": 5000,
+    "retryInfinite": false
+  }
+}
+```
+
+**События SSE:**
+- `start` — начало выполнения
+- `status` — изменение статуса хоста
+- `result` — результат выполнения
+- `error` — ошибка на хосте
+- `complete` — завершение выполнения
+
+### POST /api/hosts
+
+Парсинг файла с хостами.
+
+### POST /api/export
+
+Экспорт результатов.
+
+---
+
+## 🔒 Безопасность
+
+### Хранение данных
+
+- **Пароли и SSH ключи** шифруются перед сохранением
+- **localStorage** используется для персистентности данных
+- Данные **не передаются** на внешние серверы
+
+### Рекомендации
+
+1. **Не храните** продакшн-ключи в браузере длительное время
+2. Используйте **отдельные ключи** для SSH Manager
+3. **Ограничьте права** SSH-ключей минимально необходимыми
+4. Используйте **VPN** при работе с серверами
+
+### SSH ключи
+
+Поддерживаются форматы:
+- **OpenSSH** (рекомендуется)
+- **PuTTY PPK**
+
+Для конвертации PPK в OpenSSH:
+```bash
+puttygen key.ppk -O private-openssh -o key.openssh
+```
+
+---
+
+## 🖼️ Скриншоты
+
+### Главный экран
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  🖥️ SSH Manager          Хостов: 5  Выбрано: 3     ⚙️          │
+├─────────────────────────────────────────────────────────────────┤
+│                         │                                       │
+│  ХОСТЫ                  │  ВЫПОЛНЕНИЕ │ ЗАГРУЗКА │ РЕЗУЛЬТАТЫ  │
+│  ─────────────────      │                                       │
+│  [+] Добавить хост      │  Команда:                             │
+│                         │  ┌─────────────────────────────────┐  │
+│  ☐ 192.168.1.1:22      │  │ uptime                          │  │
+│  ☑ 192.168.1.2:22      │  └─────────────────────────────────┘  │
+│  ☑ 192.168.1.3:22      │                                       │
+│  ☑ 192.168.1.4:22      │  Быстрые: [uptime] [df -h] [top]     │
+│  ☐ 192.168.1.5:22      │                                       │
+│                         │  ▶ Выполнить   Выбрано: 3            │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 🛠️ Разработка
+
+### Структура проекта
+
+```
+ssh-manager/
+├── src/
+│   ├── app/
+│   │   ├── page.tsx          # Главная страница
+│   │   ├── layout.tsx        # Layout
+│   │   ├── globals.css       # Глобальные стили
+│   │   └── api/
+│   │       ├── stream/       # SSE API выполнения
+│   │       ├── hosts/        # API парсинга файлов
+│   │       └── export/       # API экспорта
+│   ├── components/
+│   │   ├── ui/               # shadcn/ui компоненты
+│   │   └── ssh-manager/      # Компоненты приложения
+│   ├── lib/
+│   │   ├── ssh/              # SSH логика
+│   │   ├── parsers/          # Парсеры файлов
+│   │   └── crypto-utils.ts   # Шифрование
+│   ├── store/                # Zustand store
+│   ├── types/                # TypeScript типы
+│   └── hooks/                # React хуки
+├── package.json
+└── README.md
+```
+
+### Скрипты
+
+```bash
+bun run dev      # Запуск в режиме разработки
+bun run build    # Сборка для продакшн
+bun run lint     # Проверка кода
+```
+
+### Технологии
+
+- **Next.js 15** — React фреймворк
+- **React 19** — UI библиотека
+- **TypeScript** — типизация
+- **Tailwind CSS** — стили
+- **shadcn/ui** — компоненты
+- **Zustand** — state management
+- **ssh2** — SSH клиент (Node.js)
+- **xlsx** — работа с Excel
+
+---
+
+## 📝 Лицензия
+
+MIT License
+
+---
+
+## 👤 Автор
+
+SSH Manager Team
+
+---
+
+## 🤝 Вклад в проект
+
+Pull requests приветствуются! Для крупных изменений сначала откройте issue для обсуждения.
+
+---
+
+## 📞 Поддержка
+
+Если у вас возникли вопросы или проблемы, создайте [Issue](https://github.com/redbleach5/ssh-manager/issues) в репозитории.
