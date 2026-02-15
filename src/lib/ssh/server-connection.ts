@@ -13,16 +13,26 @@ async function getSSH2() {
 }
 
 // Шифрование для хранения чувствительных данных
-const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY || 'ssh-manager-default-key-32ch';
+// ВНИМАНИЕ: В продакшене обязательно установите уникальный ENCRYPTION_KEY в .env
+const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY;
 const ALGORITHM = 'aes-256-cbc';
 
+// Генерация ключа из секретной фразы
+function getEncryptionKey(): Buffer {
+  const secret = ENCRYPTION_KEY || 'ssh-manager-dev-key-change-in-production';
+  // Используем уникальный salt для каждого приложения
+  const salt = crypto.createHash('sha256').update('ssh-manager-salt-' + secret).digest();
+  return crypto.scryptSync(secret, salt.slice(0, 16), 32);
+}
+
 export function encrypt(text: string): string {
-  const key = crypto.scryptSync(ENCRYPTION_KEY, 'salt', 32);
+  const key = getEncryptionKey();
   const iv = crypto.randomBytes(16);
   const cipher = crypto.createCipheriv(ALGORITHM, key, iv);
   let encrypted = cipher.update(text, 'utf8', 'hex');
   encrypted += cipher.final('hex');
-  return iv.toString('hex') + ':' + encrypted;
+  // Добавляем префикс для идентификации формата
+  return 'srv:' + iv.toString('hex') + ':' + encrypted;
 }
 
 export function decrypt(encryptedText: string): string {
@@ -34,26 +44,42 @@ export function decrypt(encryptedText: string): string {
       return Buffer.from(encoded, 'base64').toString('utf8');
     }
     
-    if (encryptedText.startsWith('aes:')) {
-      // Старый формат - не используем
-      return encryptedText;
+    if (encryptedText.startsWith('srv:')) {
+      // Серверный формат
+      const parts = encryptedText.slice(4).split(':');
+      if (parts.length !== 2) {
+        return encryptedText;
+      }
+      
+      const key = getEncryptionKey();
+      const iv = Buffer.from(parts[0], 'hex');
+      const encrypted = parts[1];
+      const decipher = crypto.createDecipheriv(ALGORITHM, key, iv);
+      let decrypted = decipher.update(encrypted, 'hex', 'utf8');
+      decrypted += decipher.final('utf8');
+      return decrypted;
     }
     
-    // Формат iv:encrypted
+    // Старый формат iv:encrypted
     const parts = encryptedText.split(':');
-    if (parts.length !== 2) {
-      return encryptedText; // Не зашифровано
+    if (parts.length === 2 && parts[0].length === 32) {
+      // Возможно старый формат - пробуем декодировать
+      try {
+        const key = getEncryptionKey();
+        const iv = Buffer.from(parts[0], 'hex');
+        const encrypted = parts[1];
+        const decipher = crypto.createDecipheriv(ALGORITHM, key, iv);
+        let decrypted = decipher.update(encrypted, 'hex', 'utf8');
+        decrypted += decipher.final('utf8');
+        return decrypted;
+      } catch {
+        return encryptedText;
+      }
     }
     
-    const key = crypto.scryptSync(ENCRYPTION_KEY, 'salt', 32);
-    const iv = Buffer.from(parts[0], 'hex');
-    const encrypted = parts[1];
-    const decipher = crypto.createDecipheriv(ALGORITHM, key, iv);
-    let decrypted = decipher.update(encrypted, 'hex', 'utf8');
-    decrypted += decipher.final('utf8');
-    return decrypted;
+    return encryptedText; // Не зашифровано
   } catch {
-    return encryptedText; // Если не зашифровано, возвращаем как есть
+    return encryptedText; // Если ошибка, возвращаем как есть
   }
 }
 
@@ -79,6 +105,13 @@ export function createSSHConfig(host: Host, decryptedPassword?: string, decrypte
   return config;
 }
 
+// Типы для SSH2 stream
+interface SSHStream extends NodeJS.ReadableStream {
+  on(event: 'close', listener: (code: number, signal: string) => void): this;
+  on(event: 'data', listener: (data: Buffer) => void): this;
+  stderr: NodeJS.ReadableStream;
+}
+
 // Выполнение команды на одном хосте
 export async function executeOnHost(
   host: Host,
@@ -87,7 +120,7 @@ export async function executeOnHost(
   onStatusChange?: (status: HostStatus, message?: string) => void
 ): Promise<CommandResult> {
   const ssh2 = await getSSH2();
-  const ClientClass = ssh2.default.Client || ssh2.Client;
+  const ClientClass = ssh2.default?.Client || ssh2.Client;
   
   return new Promise((resolve, reject) => {
     const client = new ClientClass();
@@ -116,10 +149,7 @@ export async function executeOnHost(
       onStatusChange?.('connected', 'Подключено');
       onStatusChange?.('executing', 'Выполнение команды...');
 
-      client.exec(command, (err: Error | undefined, stream: NodeJS.ReadableStream & { 
-        on: (event: string, cb: (data: Buffer) => void) => void;
-        stderr: { on: (event: string, cb: (data: Buffer) => void) => void };
-      }) => {
+      client.exec(command, (err: Error | undefined, stream: SSHStream) => {
         if (err) {
           clearTimeout(timeoutId);
           cleanup();
