@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
@@ -46,8 +45,13 @@ export function AddHostForm() {
 
   // Bulk
   const [bulkText, setBulkText] = useState('');
+  const [bulkAuthType, setBulkAuthType] = useState<AuthType>('password');
+  const [bulkPassword, setBulkPassword] = useState('');
+  const [bulkKey, setBulkKey] = useState('');
+  const [bulkKeyFormat, setBulkKeyFormat] = useState<KeyFormat>('openssh');
+  const [bulkPassphrase, setBulkPassphrase] = useState('');
 
-  const { addHosts, hosts } = useSSHStore();
+  const { addHosts, selectAllHosts } = useSSHStore();
 
   const handleAddSingle = () => {
     if (!ip.trim()) return;
@@ -67,12 +71,13 @@ export function AddHostForm() {
     addHosts([newHost]);
     resetForm();
     setOpen(false);
+    // Автовыбор добавленного хоста
+    setTimeout(() => selectAllHosts(), 100);
   };
 
   const handleAddBulk = () => {
     if (!bulkText.trim()) return;
 
-    // Парсим построчно
     const lines = bulkText.split('\n').filter((l) => l.trim());
     const newHosts: Parameters<typeof addHosts>[0] = [];
 
@@ -80,20 +85,28 @@ export function AddHostForm() {
       const parts = line.split(/[\s,;]+/).filter((p) => p.trim());
       if (parts.length === 0) continue;
 
-      // IP с возможным портом
       const ipPart = parts[0];
       const [ipAddr, portPart] = ipPart.split(':');
       const parsedPort = portPart ? parseInt(portPart) : 22;
 
-      // Валидация IP (базовая)
       if (!/^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(ipAddr)) continue;
 
+      // Если есть пароль в строке - используем его, иначе используем общие креды
+      const hasPassword = parts.length >= 3 && parts[2];
+      
       newHosts.push({
         ip: ipAddr,
         port: parsedPort,
         username: parts[1] || 'root',
-        password: parts[2] ? encryptSync(parts[2]) : undefined,
-        authType: parts[2] ? 'password' : 'key',
+        password: hasPassword 
+          ? encryptSync(parts[2])
+          : bulkAuthType === 'password' && bulkPassword 
+            ? encryptSync(bulkPassword) 
+            : undefined,
+        privateKey: bulkAuthType === 'key' && bulkKey ? encryptSync(bulkKey) : undefined,
+        keyFormat: bulkAuthType === 'key' ? bulkKeyFormat : undefined,
+        passphrase: bulkAuthType === 'key' && bulkPassphrase ? encryptSync(bulkPassphrase) : undefined,
+        authType: hasPassword ? 'password' : bulkAuthType,
       });
     }
 
@@ -101,6 +114,7 @@ export function AddHostForm() {
       addHosts(newHosts);
       setBulkText('');
       setOpen(false);
+      setTimeout(() => selectAllHosts(), 100);
     }
   };
 
@@ -115,192 +129,293 @@ export function AddHostForm() {
     setPassphrase('');
     setName('');
     setBulkText('');
+    setBulkAuthType('password');
+    setBulkPassword('');
+    setBulkKey('');
+    setBulkPassphrase('');
   };
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button>
-          <Plus className="w-4 h-4 mr-2" />
-          Добавить хост
+        <Button size="sm">
+          <Plus className="w-4 h-4 mr-1" />
+          Добавить
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-xl">
         <DialogHeader>
           <DialogTitle>Добавление хостов</DialogTitle>
           <DialogDescription>
-            Добавьте один или несколько хостов для управления
+            Добавьте хосты для управления
           </DialogDescription>
         </DialogHeader>
 
         <Tabs value={mode} onValueChange={(v) => setMode(v as 'single' | 'bulk')}>
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="single">Один хост</TabsTrigger>
-            <TabsTrigger value="bulk">Массовое добавление</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-2 h-8">
+            <TabsTrigger value="single" className="text-xs">Один хост</TabsTrigger>
+            <TabsTrigger value="bulk" className="text-xs">Массовое</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="single" className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="ip">IP адрес *</Label>
+          <TabsContent value="single" className="space-y-3 mt-3">
+            {/* IP и порт */}
+            <div className="grid grid-cols-3 gap-2">
+              <div className="col-span-2">
+                <Label className="text-xs">IP адрес *</Label>
                 <Input
-                  id="ip"
                   placeholder="192.168.1.1"
                   value={ip}
                   onChange={(e) => setIp(e.target.value)}
+                  className="h-8 text-sm"
                 />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="port">Порт</Label>
+              <div>
+                <Label className="text-xs">Порт</Label>
                 <Input
-                  id="port"
                   type="number"
                   value={port}
                   onChange={(e) => setPort(e.target.value)}
+                  className="h-8 text-sm"
                 />
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="username">Пользователь</Label>
+            {/* Пользователь и название */}
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <Label className="text-xs">Пользователь</Label>
                 <Input
-                  id="username"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
+                  className="h-8 text-sm"
                 />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="name">Название (опц.)</Label>
+              <div>
+                <Label className="text-xs">Название (опц.)</Label>
                 <Input
-                  id="name"
-                  placeholder="Web Server 1"
+                  placeholder="Web Server"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
+                  className="h-8 text-sm"
                 />
               </div>
             </div>
 
-            <div className="space-y-2">
-              <Label>Тип аутентификации</Label>
-              <Select
-                value={authType}
-                onValueChange={(v) => setAuthType(v as AuthType)}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="password">
-                    <div className="flex items-center gap-2">
-                      <Lock className="w-4 h-4" />
-                      Пароль
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="key">
-                    <div className="flex items-center gap-2">
-                      <Key className="w-4 h-4" />
-                      SSH ключ
-                    </div>
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {authType === 'password' ? (
-              <div className="space-y-2">
-                <Label htmlFor="password">Пароль</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                />
+            {/* Аутентификация */}
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <Label className="text-xs">Тип аутент.</Label>
+                <Select value={authType} onValueChange={(v) => setAuthType(v as AuthType)}>
+                  <SelectTrigger className="h-8 text-sm">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="password">
+                      <div className="flex items-center gap-1">
+                        <Lock className="w-3 h-3" /> Пароль
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="key">
+                      <div className="flex items-center gap-1">
+                        <Key className="w-3 h-3" /> SSH ключ
+                      </div>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
-            ) : (
-              <>
-                <div className="space-y-2">
-                  <Label>Формат ключа</Label>
-                  <Select
-                    value={keyFormat}
-                    onValueChange={(v) => setKeyFormat(v as KeyFormat)}
-                  >
-                    <SelectTrigger>
+              <div>
+                <Label className="text-xs">
+                  {authType === 'password' ? 'Пароль' : 'Формат ключа'}
+                </Label>
+                {authType === 'password' ? (
+                  <Input
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="h-8 text-sm"
+                  />
+                ) : (
+                  <Select value={keyFormat} onValueChange={(v) => setKeyFormat(v as KeyFormat)}>
+                    <SelectTrigger className="h-8 text-sm">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="openssh">OpenSSH</SelectItem>
-                      <SelectItem value="putty">PuTTY (PPK)</SelectItem>
+                      <SelectItem value="putty">PuTTY PPK</SelectItem>
                     </SelectContent>
                   </Select>
-                </div>
+                )}
+              </div>
+            </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="key">Приватный ключ</Label>
-                  <Textarea
-                    id="key"
-                    placeholder="-----BEGIN OPENSSH PRIVATE KEY-----
-...
------END OPENSSH PRIVATE KEY-----"
-                    value={privateKey}
-                    onChange={(e) => setPrivateKey(e.target.value)}
-                    className="font-mono text-xs min-h-[100px]"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="passphrase">Passphrase (опц.)</Label>
+            {/* SSH ключ */}
+            {authType === 'key' && (
+              <div className="space-y-2">
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-7 text-xs"
+                    onClick={() => document.getElementById('key-file-single')?.click()}
+                  >
+                    <Upload className="w-3 h-3 mr-1" />
+                    Выбрать файл
+                  </Button>
                   <Input
-                    id="passphrase"
                     type="password"
+                    placeholder="Passphrase (опц.)"
                     value={passphrase}
                     onChange={(e) => setPassphrase(e.target.value)}
-                    placeholder="Пароль к ключу"
+                    className="h-7 text-xs flex-1"
                   />
                 </div>
-              </>
+                <Textarea
+                  placeholder="Вставьте приватный ключ..."
+                  value={privateKey}
+                  onChange={(e) => setPrivateKey(e.target.value)}
+                  className="font-mono text-xs min-h-[80px]"
+                />
+                <input
+                  id="key-file-single"
+                  type="file"
+                  accept=".pem,.key,.ppk"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      const reader = new FileReader();
+                      reader.onload = (ev) => setPrivateKey(ev.target?.result as string);
+                      reader.readAsText(file);
+                    }
+                  }}
+                  className="hidden"
+                />
+              </div>
             )}
 
             <DialogFooter>
-              <Button variant="outline" onClick={() => setOpen(false)}>
+              <Button variant="outline" size="sm" onClick={() => setOpen(false)}>
                 Отмена
               </Button>
-              <Button onClick={handleAddSingle} disabled={!ip.trim()}>
-                <Plus className="w-4 h-4 mr-2" />
+              <Button size="sm" onClick={handleAddSingle} disabled={!ip.trim()}>
+                <Plus className="w-3 h-3 mr-1" />
                 Добавить
               </Button>
             </DialogFooter>
           </TabsContent>
 
-          <TabsContent value="bulk" className="space-y-4">
-            <div className="space-y-2">
-              <Label>Формат ввода</Label>
-              <div className="text-sm text-muted-foreground space-y-1">
-                <p>Одна строка = один хост. Возможные форматы:</p>
-                <ul className="list-disc pl-4 space-y-1">
-                  <li><code>IP</code> — только IP, пользователь root, ключ</li>
-                  <li><code>IP user</code> — IP и пользователь</li>
-                  <li><code>IP user password</code> — с паролем</li>
-                  <li><code>IP:port user password</code> — с портом</li>
-                </ul>
+          <TabsContent value="bulk" className="space-y-3 mt-3">
+            {/* Общие креды */}
+            <div className="grid grid-cols-3 gap-2">
+              <div>
+                <Label className="text-xs">Тип аутент.</Label>
+                <Select value={bulkAuthType} onValueChange={(v) => setBulkAuthType(v as AuthType)}>
+                  <SelectTrigger className="h-7 text-xs">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="password">
+                      <div className="flex items-center gap-1 text-xs">
+                        <Lock className="w-3 h-3" /> Пароль
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="key">
+                      <div className="flex items-center gap-1 text-xs">
+                        <Key className="w-3 h-3" /> Ключ
+                      </div>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="col-span-2">
+                <Label className="text-xs">
+                  {bulkAuthType === 'password' ? 'Пароль (общий)' : 'Формат ключа'}
+                </Label>
+                {bulkAuthType === 'password' ? (
+                  <Input
+                    type="password"
+                    placeholder="Общий пароль"
+                    value={bulkPassword}
+                    onChange={(e) => setBulkPassword(e.target.value)}
+                    className="h-7 text-xs"
+                  />
+                ) : (
+                  <Select value={bulkKeyFormat} onValueChange={(v) => setBulkKeyFormat(v as KeyFormat)}>
+                    <SelectTrigger className="h-7 text-xs">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="openssh">OpenSSH</SelectItem>
+                      <SelectItem value="putty">PuTTY PPK</SelectItem>
+                    </SelectContent>
+                  </Select>
+                )}
               </div>
             </div>
 
+            {/* SSH ключ для bulk */}
+            {bulkAuthType === 'key' && (
+              <div className="space-y-2">
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-7 text-xs"
+                    onClick={() => document.getElementById('key-file-bulk')?.click()}
+                  >
+                    <Upload className="w-3 h-3 mr-1" />
+                    Выбрать файл
+                  </Button>
+                  <Input
+                    type="password"
+                    placeholder="Passphrase (опц.)"
+                    value={bulkPassphrase}
+                    onChange={(e) => setBulkPassphrase(e.target.value)}
+                    className="h-7 text-xs flex-1"
+                  />
+                </div>
+                <Textarea
+                  placeholder="Приватный ключ для всех хостов..."
+                  value={bulkKey}
+                  onChange={(e) => setBulkKey(e.target.value)}
+                  className="font-mono text-xs min-h-[60px]"
+                />
+                <input
+                  id="key-file-bulk"
+                  type="file"
+                  accept=".pem,.key,.ppk"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      const reader = new FileReader();
+                      reader.onload = (ev) => setBulkKey(ev.target?.result as string);
+                      reader.readAsText(file);
+                    }
+                  }}
+                  className="hidden"
+                />
+              </div>
+            )}
+
+            {/* Формат и textarea */}
+            <div className="text-[10px] text-muted-foreground">
+              Формат: <code>IP [user] [password]</code> • По одному на строку
+            </div>
+            
             <Textarea
               placeholder={`192.168.1.1
 192.168.1.2 admin password123
-192.168.1.3:2222 root secretpass`}
+192.168.1.3:2222 root`}
               value={bulkText}
               onChange={(e) => setBulkText(e.target.value)}
-              className="font-mono min-h-[200px]"
+              className="font-mono text-xs min-h-[120px]"
             />
 
             <DialogFooter>
-              <Button variant="outline" onClick={() => setOpen(false)}>
+              <Button variant="outline" size="sm" onClick={() => setOpen(false)}>
                 Отмена
               </Button>
-              <Button onClick={handleAddBulk} disabled={!bulkText.trim()}>
-                <Plus className="w-4 h-4 mr-2" />
+              <Button size="sm" onClick={handleAddBulk} disabled={!bulkText.trim()}>
+                <Plus className="w-3 h-3 mr-1" />
                 Добавить
               </Button>
             </DialogFooter>
