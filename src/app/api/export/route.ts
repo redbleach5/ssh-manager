@@ -34,19 +34,19 @@ export async function POST(request: NextRequest) {
       case 'csv':
         content = generateCSV(filteredResults, includeTimestamp);
         filename = `ssh-results-${Date.now()}.csv`;
-        mimeType = 'text/csv';
+        mimeType = 'text/csv; charset=utf-8';
         break;
 
       case 'json':
         content = JSON.stringify(filteredResults, null, 2);
         filename = `ssh-results-${Date.now()}.json`;
-        mimeType = 'application/json';
+        mimeType = 'application/json; charset=utf-8';
         break;
 
       case 'txt':
         content = generateTXT(filteredResults, includeTimestamp);
         filename = `ssh-results-${Date.now()}.txt`;
-        mimeType = 'text/plain';
+        mimeType = 'text/plain; charset=utf-8';
         break;
 
       case 'xlsx':
@@ -79,6 +79,9 @@ export async function POST(request: NextRequest) {
 }
 
 function generateCSV(results: CommandResult[], includeTimestamp: boolean): string {
+  // Добавляем BOM для корректного отображения UTF-8 в Excel
+  const BOM = '\uFEFF';
+
   const headers = [
     'IP адрес',
     'Команда',
@@ -101,11 +104,14 @@ function generateCSV(results: CommandResult[], includeTimestamp: boolean): strin
     `"${r.stderr.replace(/"/g, '""').replace(/\n/g, '\\n')}"`,
   ]);
 
-  return [headers.join(';'), ...rows.map(r => r.join(';'))].join('\n');
+  return BOM + [headers.join(';'), ...rows.map(r => r.join(';'))].join('\n');
 }
 
 function generateTXT(results: CommandResult[], includeTimestamp: boolean): string {
-  return results.map(r => {
+  // Добавляем BOM для корректного отображения UTF-8
+  const BOM = '\uFEFF';
+
+  const content = results.map(r => {
     const lines = [
       `=== ${r.hostIp} ===`,
       `Команда: ${r.command}`,
@@ -124,6 +130,8 @@ function generateTXT(results: CommandResult[], includeTimestamp: boolean): strin
     ];
     return lines.join('\n');
   }).join('\n');
+
+  return BOM + content;
 }
 
 function generateXLSX(results: CommandResult[], includeTimestamp: boolean): Buffer {
