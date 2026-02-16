@@ -1,8 +1,7 @@
 // Хук для загрузки и парсинга файлов с хостами
 
 import { useState, useCallback } from 'react';
-import { ParseResult, Host } from '@/types';
-import { useSSHStore } from '@/store/ssh-store';
+import { ParseResult } from '@/types';
 
 interface UseFileUploadResult {
   isLoading: boolean;
@@ -16,8 +15,6 @@ export function useFileUpload(): UseFileUploadResult {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [parseResult, setParseResult] = useState<ParseResult | null>(null);
-
-  const { addHosts, appSettings } = useSSHStore();
 
   const uploadFile = useCallback(async (file: File) => {
     setIsLoading(true);
@@ -43,17 +40,15 @@ export function useFileUpload(): UseFileUploadResult {
         throw new Error(result.error || 'Ошибка обработки файла');
       }
 
+      // Парсер возвращает только IP и порты, креды будут применены на клиенте
       setParseResult({
-        hosts: result.data.hosts.map((h: Host) => ({
+        hosts: result.data.hosts.map((h: { ip: string; port: number; username?: string; password?: string; name?: string }) => ({
           ip: h.ip,
           port: h.port,
-          username: h.username,
-          password: h.password,
-          authType: h.authType,
-          privateKey: h.privateKey,
-          keyFormat: h.keyFormat,
-          passphrase: h.passphrase,
-          group: h.group,
+          // Не используем username/password из файла - будут применены общие креды
+          username: '', // Будет заменён на общий
+          password: undefined, // Будет заменён на общий
+          authType: 'password',
           name: h.name,
         })),
         errors: result.data.parseResult.errors,

@@ -59,16 +59,13 @@ export function FileUpload({ onUploadComplete }: FileUploadProps) {
   const [keyFormat, setKeyFormat] = useState<KeyFormat>('openssh');
   const [passphrase, setPassphrase] = useState('');
   const [selectAllOnAdd, setSelectAllOnAdd] = useState(true);
-  
-  // Флаг: перезаписывать ли креды из файла общими
-  const [overrideCredentials, setOverrideCredentials] = useState(false);
 
   const { isLoading, error, parseResult, uploadFile, clearResult } = useFileUpload();
   const { addHosts, selectAllHosts } = useSSHStore();
 
   const processFile = useCallback(async (file: File) => {
-    await uploadFile(file, defaultUsername);
-  }, [uploadFile, defaultUsername]);
+    await uploadFile(file);
+  }, [uploadFile]);
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -106,32 +103,24 @@ export function FileUpload({ onUploadComplete }: FileUploadProps) {
   const handleConfirmAdd = useCallback(() => {
     if (pendingHosts) {
       // Применяем общие креды ко всем хостам
-      const hosts = pendingHosts.hosts.map(h => {
-        // Определяем, есть ли свои креды у хоста из файла
-        const hasOwnPassword = h.password && h.password.length > 0;
-        const hasOwnUsername = h.username && h.username !== 'root' && h.username !== defaultUsername;
-        
-        // Если включено перезаписывание или нет своих кредов - используем общие
-        const useDefault = overrideCredentials || !hasOwnPassword;
-        
-        return {
-          ...h,
-          // Логин: перезаписываем если включено, или используем из файла/дефолтный
-          username: overrideCredentials ? defaultUsername : (h.username || defaultUsername),
-          // Тип аутентификации
-          authType: useDefault ? authType : 'password',
-          // Пароль: из файла или общий
-          password: !useDefault && hasOwnPassword 
-            ? encryptSync(h.password!) 
-            : authType === 'password' && defaultPassword 
-              ? encryptSync(defaultPassword) 
-              : undefined,
-          // SSH ключ
-          privateKey: authType === 'key' && privateKey ? encryptSync(privateKey) : undefined,
-          keyFormat: authType === 'key' ? keyFormat : undefined,
-          passphrase: authType === 'key' && passphrase ? encryptSync(passphrase) : undefined,
-        };
-      });
+      const hosts = pendingHosts.hosts.map(h => ({
+        ip: h.ip,
+        port: h.port,
+        name: h.name,
+        // Применяем общие креды ко всем хостам
+        username: defaultUsername,
+        authType: authType,
+        password: authType === 'password' && defaultPassword 
+          ? encryptSync(defaultPassword) 
+          : undefined,
+        privateKey: authType === 'key' && privateKey 
+          ? encryptSync(privateKey) 
+          : undefined,
+        keyFormat: authType === 'key' ? keyFormat : undefined,
+        passphrase: authType === 'key' && passphrase 
+          ? encryptSync(passphrase) 
+          : undefined,
+      }));
       
       addHosts(hosts);
       
@@ -144,7 +133,7 @@ export function FileUpload({ onUploadComplete }: FileUploadProps) {
       clearResult();
       onUploadComplete?.();
     }
-  }, [pendingHosts, defaultUsername, authType, defaultPassword, privateKey, keyFormat, passphrase, overrideCredentials, selectAllOnAdd, addHosts, selectAllHosts, clearResult, onUploadComplete]);
+  }, [pendingHosts, defaultUsername, authType, defaultPassword, privateKey, keyFormat, passphrase, selectAllOnAdd, addHosts, selectAllHosts, clearResult, onUploadComplete]);
 
   const resetCredentials = () => {
     setDefaultUsername('root');
@@ -164,7 +153,7 @@ export function FileUpload({ onUploadComplete }: FileUploadProps) {
             Загрузка хостов
           </CardTitle>
           <CardDescription className="text-xs">
-            TXT, CSV, XLSX, XLS • Укажите общие креды для всех
+            TXT, CSV, XLSX, XLS • Укажите креды для всех хостов
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
@@ -343,41 +332,32 @@ export function FileUpload({ onUploadComplete }: FileUploadProps) {
 
       {/* Диалог превью */}
       <Dialog open={showPreview} onOpenChange={setShowPreview}>
-        <DialogContent className="max-w-3xl max-h-[85vh]">
+        <DialogContent className="max-w-2xl max-h-[85vh]">
           <DialogHeader>
             <DialogTitle>Предпросмотр хостов</DialogTitle>
             <DialogDescription>
-              Креды выше будут применены ко всем хостам
+              Указанные креды будут применены ко всем хостам
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-2 py-2 border-y">
-            <div className="flex items-center gap-2">
-              <Checkbox
-                id="select-all"
-                checked={selectAllOnAdd}
-                onCheckedChange={(checked) => setSelectAllOnAdd(!!checked)}
-              />
-              <Label htmlFor="select-all" className="text-sm cursor-pointer">
-                Автовыбор всех хостов для выполнения
-              </Label>
-            </div>
-            <div className="flex items-center gap-2">
-              <Checkbox
-                id="override-creds"
-                checked={overrideCredentials}
-                onCheckedChange={(checked) => setOverrideCredentials(!!checked)}
-              />
-              <Label htmlFor="override-creds" className="text-sm cursor-pointer">
-                Перезаписать креды из файла общими (логин: {defaultUsername})
-              </Label>
-            </div>
+          <div className="bg-muted/50 rounded p-2 text-xs">
+            <strong>Креды для всех:</strong> Логин: <code className="font-bold">{defaultUsername}</code>, 
+            {' '}{authType === 'password' ? (
+              defaultPassword ? 'Пароль: ******' : <span className="text-red-500">Пароль: НЕ УКАЗАН!</span>
+            ) : (
+              privateKey ? 'SSH ключ: загружен' : <span className="text-red-500">SSH ключ: НЕ УКАЗАН!</span>
+            )}
           </div>
 
-          <div className="bg-muted/50 rounded p-2 text-xs">
-            <strong>Будут применены:</strong> Логин: <code>{defaultUsername}</code>, 
-            {' '}{authType === 'password' ? 'Пароль: ******' : 'SSH ключ'} 
-            {overrideCredentials && ' (перезапись включена)'}
+          <div className="flex items-center gap-2 py-2 border-y">
+            <Checkbox
+              id="select-all"
+              checked={selectAllOnAdd}
+              onCheckedChange={(checked) => setSelectAllOnAdd(!!checked)}
+            />
+            <Label htmlFor="select-all" className="text-sm cursor-pointer">
+              Автовыбор всех хостов для выполнения
+            </Label>
           </div>
 
           <ScrollArea className="flex-1 max-h-[30vh]">
@@ -387,8 +367,9 @@ export function FileUpload({ onUploadComplete }: FileUploadProps) {
                   <th className="text-left p-2">#</th>
                   <th className="text-left p-2">IP</th>
                   <th className="text-left p-2">Порт</th>
-                  <th className="text-left p-2">Пользователь</th>
-                  <th className="text-left p-2">Пароль из файла</th>
+                  {pendingHosts?.hosts.some(h => h.name) && (
+                    <th className="text-left p-2">Имя</th>
+                  )}
                 </tr>
               </thead>
               <tbody>
@@ -397,19 +378,9 @@ export function FileUpload({ onUploadComplete }: FileUploadProps) {
                     <td className="p-2">{index + 1}</td>
                     <td className="p-2 font-mono">{host.ip}</td>
                     <td className="p-2">{host.port}</td>
-                    <td className="p-2">
-                      {host.username}
-                      {overrideCredentials && host.username !== defaultUsername && (
-                        <span className="text-orange-500 ml-1">→ {defaultUsername}</span>
-                      )}
-                    </td>
-                    <td className="p-2">
-                      {host.password ? (
-                        <Badge variant="outline" className="text-xs">Есть</Badge>
-                      ) : (
-                        <Badge variant="secondary" className="text-xs">Нет → общие</Badge>
-                      )}
-                    </td>
+                    {pendingHosts.hosts.some(h => h.name) && (
+                      <td className="p-2 text-muted-foreground">{host.name || '-'}</td>
+                    )}
                   </tr>
                 ))}
               </tbody>
@@ -440,7 +411,10 @@ export function FileUpload({ onUploadComplete }: FileUploadProps) {
             <Button variant="outline" onClick={() => setShowPreview(false)}>
               Отмена
             </Button>
-            <Button onClick={handleConfirmAdd}>
+            <Button 
+              onClick={handleConfirmAdd}
+              disabled={(authType === 'password' && !defaultPassword) || (authType === 'key' && !privateKey)}
+            >
               <Plus className="w-4 h-4 mr-2" />
               Добавить {pendingHosts?.validCount || 0} хостов
             </Button>
